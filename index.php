@@ -24,6 +24,7 @@ if(isset($_GET["skip"])) {
 
 if(isset($_GET["video"])) {
 	include("videostream.inc");
+	header('Content-type: video/mp4');
 	$stream = new VideoStream($drive_loc . $_GET["video"]);
 	$stream->start();
 	die();
@@ -31,14 +32,27 @@ if(isset($_GET["video"])) {
 
 if(isset($_GET["delete"])) {
 	unlink($drive_loc.$_GET["delete"]);
-	header("Location: /\n\n");
-	die();
+	die("video deleted");
 }
-
 
 $mysqli = new mysqli("localhost", "pi", "raspberry", "shows");
 
-$csv = file_get_contents('https://docs.google.com/spreadsheets/d/1QADkcJlcQRP1PPGCcgFtUiBjNtF-gjDE1SO4lcrBosk/export?format=csv&id=1QADkcJlcQRP1PPGCcgFtUiBjNtF-gjDE1SO4lcrBosk&gid=0');
+function getShowNames($url) {
+	$murl = md5($url) . ".cache";
+	if (file_exists($murl) && (time() - 86400) < filemtime($murl)) {
+		return file_get_contents($murl);
+	}
+	
+	try {
+		$str = file_get_contents($url);
+		file_put_contents($murl, $str);
+		return $str;
+	} catch(Exception $e) {
+		return file_get_contents($murl);
+	}
+}
+
+$csv = getShowNames('https://docs.google.com/spreadsheets/d/1QADkcJlcQRP1PPGCcgFtUiBjNtF-gjDE1SO4lcrBosk/export?format=csv&id=1QADkcJlcQRP1PPGCcgFtUiBjNtF-gjDE1SO4lcrBosk&gid=0');
 
 $acsv = str_getcsv(str_replace("\r\n", ",", $csv));
 
@@ -68,12 +82,16 @@ if(isset($_GET["getshowname"])) {
 
 	$shortname=getTvShowName($_GET["getshowname"]);
 
-	if($dayofweek=="Sunday" && $hourofday>=5 && $hourofday<=10) { //sunday morning, ignore replays
+	if($shortname=="Three Stooges") {
 		$row=0;
 	} elseif($shortname=="Mr Wizard") {
 		$row=0;
+	} elseif($shortname=="Simpsons Shorts" || $shortname=="Looney Tunes") {
+		$row=0;
 	} else { //not sunday morning
-		$res = $mysqli->query("SELECT played FROM played WHERE short_name='" . addslashes($shortname) . "' AND played<=" . (time()-1) . " AND played>=" . (time()-7200) . "  LIMIT 1") or die($mysqli->error);
+		$time_diff = 7200;
+		if(date('n')==12) $time_diff = $time_diff*2;
+		$res = $mysqli->query("SELECT played FROM played WHERE short_name='" . addslashes($shortname) . "' AND played<=" . (time()-1) . " AND played>=" . (time()-$time_diff) . "  LIMIT 1") or die($mysqli->error);
 		$row = $res->fetch_row()[0]*1;
 	}
 	
@@ -197,6 +215,7 @@ window.onload = function() {
 	<button class="tablinks" style="background-color:crimson;"><a href="/?reboot=now" style="color:white;">Reboot</a></button>
 	<button class="tablinks" style="background-color:lightgreen;"><a href="/phpmyadmin" style="color:white">phpMyAdmin</a></button>
 	<button class="tablinks" style="background-color:lightblue;"><a href="/?skip=now" style="color:white;">Skip >></a></button>
+	<button class="tablinks" style="background-color:orange;"><a href="/dir.php" style="color:red;">Browse Videos</a></button>
 </div>
 
 <div class="tab">
@@ -204,6 +223,7 @@ window.onload = function() {
   <button id="btnCommercials" class="tablinks" onclick="openCity(\'Commercials\')">Commercials</button>
   <button id="btnErrors" class="tablinks" onclick="openCity(\'Errors\')">Errors</button>
   <button id="btnSettings" class="tablinks" onclick="openCity(\'Settings\')">Settings</button>
+  <button id="btnSettings" class="tablinks" onclick="openCity(\'Stats\')">Stats</button>
 </div>
 
 <!-- Tab content -->
@@ -267,7 +287,8 @@ echo '
 </div>
 ';
 
-	$folder = "undefined";
+	$folder  = "undefined";
+	$folder2 = "undefined";
 	$d = date('N');
 	$h = date('H');
 	$month = date('n');
@@ -325,7 +346,7 @@ echo '
 
 	if ($month==12) {
 		#christmas programming
-		$folder =  "xmas/" . folder;
+		$folder =  "xmas/" . $folder;
 		$folder2 = "";
 	}
 
@@ -351,11 +372,21 @@ echo '
 
 ';
 
-$res = $mysqli->query("SELECT *, COUNT(`short_name`) AS `value_occurrence` FROM `played` GROUP BY `short_name` ORDER BY `value_occurrence` DESC LIMIT 20") or die($mysqli->error);
+echo '
+<div id="Stats" class="tabcontent">
+  ';
+  
+$res = $mysqli->query("SELECT *, COUNT(`short_name`) AS `value_occurrence` FROM `played` GROUP BY `short_name` ORDER BY `value_occurrence` DESC") or die($mysqli->error);
 
 while ($row = $res->fetch_assoc()) {
 	echo '<li>' . $row["short_name"] . ' - ' . $row["value_occurrence"] . '</li>';
 }
+  
+  echo '
+</div>
+
+';
+
 
 echo '
 
