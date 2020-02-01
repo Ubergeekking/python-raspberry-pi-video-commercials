@@ -15,6 +15,11 @@ if(isset($_GET["reboot"])) {
 	exec('sudo reboot');
 }
 
+if(isset($_GET["start"])) {
+    header("Location: /\n\n");
+	exec('python /home/pi/Desktop/_rnd80s.py');
+}
+
 
 if(isset($_GET["skip"])) {
     //header("Location: /\n\n");
@@ -84,7 +89,7 @@ if(isset($_GET["getshowname"])) {
 
 	if($shortname=="Three Stooges") {
 		$row=0;
-	} elseif($shortname=="Mr Wizard") {
+	} elseif($shortname=="Mr Wizard" || $shortname=="Letterman") {
 		$row=0;
 	} elseif($shortname=="Simpsons Shorts" || $shortname=="Looney Tunes") {
 		$row=0;
@@ -203,6 +208,21 @@ window.onload = function() {
   border: 1px solid #ccc;
   border-top: none;
 }
+
+.clr-january { background-color:LemonChiffon; }
+.clr-february { background-color:DarkOrange; }
+.clr-march { background-color:DeepPink; }
+.clr-april { background-color:Gold; }
+.clr-may { background-color:LightSalmon; }
+.clr-june { background-color:SandyBrown; }
+.clr-july { background-color:Brown; }
+.clr-august { background-color:Thistle; }
+.clr-september { background-color:YellowGreen; }
+.clr-october { background-color:Peru; }
+.clr-november { background-color:LightGray; }
+.clr-december {	background-color:LightSeaGreen; }
+.clr-local { background-color:CornflowerBlue; }
+
 </style>
 </head>
 <body>
@@ -259,15 +279,24 @@ $comms_cnt = 0;
 //echo strtotime('today 23:59');
 
 $res = $mysqli->query("SELECT * FROM commercials WHERE played>=" . strtotime('today 00:00') . " AND played<=" . strtotime('today 23:59') . " ORDER BY id DESC") or die($mysqli->error);
+$comm_months = [];
 
 while ($row = $res->fetch_assoc()) {
 	//if(date("w", $row["played"])!=$td) break;
-	echo '<li><a href="/?video=' . $row["name"] . '">' . $row["name"] . "</a> played at " . date("h:i A \o\\n w m/d/Y", $row["played"]) . ' <a href="/?delete=' . $row["name"] . '">[delete]</a></li>';
+	$splits = explode('/', $row["name"]);
+	if(array_key_exists($splits[1], $comm_months)==false) { $comm_months[$splits[1]]=1; } else { $comm_months[$splits[1]]++; }
+	echo '<li><a href="/commercials.php?folder=' . $splits[1] . '"><span class="clr-'.$splits[1].'">' . $splits[1] . '</span></a><a href="/?video=' . $row["name"] . '">/' . $splits[2] . "</a> played at " . date("h:i A \o\\n w m/d/Y", $row["played"]) . ' <a href="/?delete=' . $row["name"] . '">[delete]</a></li>';
 	$comms_cnt++;
 }
 
+foreach($comm_months as $k=>$v) {
+	
+	echo "$v commercials from $k (" . ceil(($v / $comms_cnt)*100) . "%)<br />\n";
+
+}
+
 echo '
-' . $comms_cnt . ' commercials today.<br />
+<br />' . $comms_cnt . ' commercials today.<br />
 </p>
 </div>
 

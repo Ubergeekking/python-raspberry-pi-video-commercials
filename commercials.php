@@ -3,18 +3,22 @@
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
+if(isset($_GET["folder"])) {
+	$folder = $_GET["folder"];
+}
+
 echo '
 <table>
 	<tr>
 		<td style="width:30%;">';
 
-if ($handle = opendir('/media/pi/750gb/commercials/xmas/')) {
+if ($handle = opendir('/media/pi/750gb/commercials/'.$folder.'/')) {
 
     while (false !== ($entry = readdir($handle))) {
 
         if ($entry != "." && $entry != "..") {
 
-			echo '<li><a href="/?video=commercials/xmas/' . $entry . '" target="player">' . $entry . "</a> ".' <a href="/?delete=commercials/xmas/' . $entry . '">[delete]</a></li>';
+			echo '<li><a href="/?video=commercials/' . $folder . '/' . $entry . '" target="player">' . $entry . "</a> ".' <a href="/?delete=commercials/' . $folder . '/' . $entry . '">[delete]</a></li>';
 
         }
     }

@@ -96,7 +96,8 @@ def get_random_commercial():
 				return random.choice(commercials_local)
 			else:
 				tmp_lst=[]
-				for c in range(1,13):
+				#exclude december from commercial pool
+				for c in range(1,12):
 					if c!=month:
 						tmp_lst = tmp_lst + commercials_months[c]
 				
@@ -174,8 +175,12 @@ def play_video(source, commercials, max_commercials_per_break):
 		err_pos = 1.0
 		player.pause()
 		err_pos = 1.1
-		player.play()
+		strSubtitles = player.list_subtitles()
+		if(strSubtitles):
+			player.hide_subtitles()
 		err_pos = 1.2
+		player.play()
+		err_pos = 1.3
 		lt = 0
 		while (1):
 			err_pos = 2.0
@@ -261,6 +266,13 @@ def play_video(source, commercials, max_commercials_per_break):
 	return
 
 def get_commercials(source):
+	#load single file for all commercials
+	#usefull when commercial breaks are easily identifiable for a lot of episodes from a single show
+	#first 8 chrs need to exactly the same
+	if os.path.isfile(source[:8] + '.commercials.master') == True:
+		with open(source[:8] + '.commercials.master') as temp_file:
+			return [int(line.rstrip()) for line in temp_file]
+	
 	if os.path.isfile(source + '.commercials') == True:
 		with open(source + '.commercials') as temp_file:
 			return [int(line.rstrip()) for line in temp_file]
