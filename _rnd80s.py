@@ -13,6 +13,22 @@ import urllib
 import re
 import calendar
 
+def IsEaster():
+	global now
+	a = now.year % 19
+	b = now.year // 100
+	c = now.year % 100
+	d = (19 * a + b - b // 4 - ((b - (b + 8) // 25 + 1) // 3) + 15) % 30
+	e = (32 + 2 * (b % 4) + 2 * (c // 4) - d - (c % 4)) % 7
+	f = d + e - 7 * ((a + 11 * d + 22 * e) // 451) + 114
+	month = f // 31
+	day = f % 31 + 1
+	
+	if(now.date()== datetime.date(now.year, month, day)):
+		return True
+	else:
+		return False
+
 def PastThanksgiving(is_thanksgiving):
 	global now # = datetime.date.today()
 	daysInMonth = calendar.monthrange(now.year, 11)[1]
@@ -98,7 +114,7 @@ def get_random_commercial():
 				tmp_lst=[]
 				#exclude december from commercial pool
 				for c in range(1,12):
-					if c!=month:
+					if c!=month and c!=10:
 						tmp_lst = tmp_lst + commercials_months[c]
 				
 				return random.choice(tmp_lst)
@@ -129,6 +145,7 @@ def play_video(source, commercials, max_commercials_per_break):
 		global last_video_played
 		
 		err_pos = -1.0
+		
 		if next_video_to_play=='':
 			print("Last video played: " + last_video_played)
 			urlcontents = urllib2.urlopen("http://127.0.0.1/?getshowname=" + urllib.quote_plus(source)).read()
@@ -150,13 +167,14 @@ def play_video(source, commercials, max_commercials_per_break):
 		err_pos = 0.1
 		comm_player = OMXPlayer(comm_source, args=['--no-osd', '--blank'], dbus_name="omxplayer.player1")
 		err_pos = 0.12
+		comm_player.set_video_pos(40,10,660,470);
 		comm_player.set_aspect_mode('stretch');
 		err_pos = 0.13
 		comm_player.hide_video()
 		err_pos = 0.14
 		comm_player.pause()
 		err_pos = 0.15
-		comm_player.set_volume(1)
+		#comm_player.set_volume(1)
 		err_pos = 0.2
 		
 		print('Main video file:' + source)
@@ -167,9 +185,10 @@ def play_video(source, commercials, max_commercials_per_break):
 		err_pos = 0.3
 		print('Boosting Volume by ' + str(get_volume(source)) + 'db')
 		err_pos = 0.31
+		player.set_video_pos(40,10,660,470);
 		player.set_aspect_mode('stretch');
 		err_pos = 0.32
-		player.set_volume(get_volume(source))
+		#player.set_volume(get_volume(source))
 		err_pos = 0.33
 		sleep(1)
 		err_pos = 1.0
@@ -302,16 +321,17 @@ def get_volume(file_name):
 	for x, y in volume_list.items():
 		if re.sub('[^A-Za-z0-9]+', '', file_name).find(re.sub('[^A-Za-z0-9]+', '', x.lower())) != -1:
 			return y
-	return 2
+	return 1
 
 def play_some_commercials(max_commercials_per_break):
 	try:
 		comm_source = get_random_commercial()
 		comm_player = OMXPlayer(comm_source, args=['--no-osd', '--blank'], dbus_name="omxplayer.player1")
+		comm_player.set_video_pos(40,10,660,470);
 		comm_player.set_aspect_mode('stretch');
 		comm_player.hide_video()
 		comm_player.pause()
-		comm_player.set_volume(-1)
+		#comm_player.set_volume(-1)
 		comm_i = max_commercials_per_break
 		while(comm_i>=0):
 			comm_source = get_random_commercial()
@@ -389,12 +409,12 @@ while(1):
 		folder = "cartoons"
 	elif h>=0 and h<4:
 		folder = "movies"
-	elif h>=4 and h<10:
+	elif h>=4 and h<11:
 		folder = "cartoons"
-	elif h>=10 and h<15:
+	elif h>=11 and h<14:
 		folder = "reruns"
 		folder2= "gameshows"
-	elif h>=15 and h<17:
+	elif h>=14 and h<17:
 		folder = "cartoons"
 	#elif h==17:
 		#news at 5
@@ -403,7 +423,7 @@ while(1):
 		folder = "reruns"
 	elif h>= 20 and h<23:
 		folder = "primetime" + dayfolder
-		if random.randint(1,14) == 1:
+		if random.randint(1,20) == 1:
 			#1 in 14 chance to play a random video or primetime special
 			folder = "primetime/random"
 	elif h==23 and (d>=0 and d<=4):
@@ -423,14 +443,14 @@ while(1):
 
 	if d==5 and h>=19 and h<=21 and random.randint(1,9)==5:
 		#saturday night, take a chance for a movie of the week!
-		folder = "specials/movies"
-		folder2 = ""
-	if d==5 and h>=14 and h<=15 and random.randint(1,5)==2 and month>=4 and month <=9:
-		#saturday afternoon, in spring/summer, take a chance for a baseball game
+		
+		folder2 = "movies"
+	if d==5 and h>=14 and h<=15 and month>=4 and month <=9:
+		#saturday afternoon, in spring/summer, play a baseball game
 		folder = "specials/baseball"
 		folder2 = ""
-	if d==6 and h>=14 and h<=15 and random.randint(1,5)==2 and month>=9 and month<=2:
-		#sunday afternoon, in fall/winter, take a chance for a football game
+	if d==6 and h>=14 and h<=15 and month>=9 and month<=2:
+		#sunday afternoon, in fall/winter, play a football game
 		folder = "specials/football"
 		folder2 = ""
 
@@ -440,13 +460,18 @@ while(1):
 		#4th of July
 		folder = "specials/4th of july"
 		folder2 = ""
-	if month==10 and ddm==31 and h>= 20 and h<23:
+	if month==10 and ddm==31:
 		#Halloween
 		folder = "specials/halloween"
 		folder2 = ""
+	if IsEaster()==True and h>= 20 and h<22:
+		folder = "specials/easter"
+		folder2 = ""
+
+
 
 	#fill space close to the hour
-	print("Minute: " + str(m))
+	
 	#if (m>=24 and m<=29) or (m>=54 and m<=59):
 		#close to half/top hour
 		#folder = "specials/shorts"
@@ -459,14 +484,14 @@ while(1):
 
 
 	#special shows based on day and time
-	if d==6 and h>=5 and h<10:
+	if d==6 and h>=6 and (h<=7 and m<=30):
 		#sunday morning
 		folder = "specials/sunday_morning"
 		folder2 = ""
-	if (h==6 and m>=45) or (h==7 and m<=30):
-		#play mr wizard in the morning
-		folder = "cartoons/mr wizard"
-		folder2 = ""
+	#if (h==6 and m>=45) or (h==7 and m<=15) and d==2:
+		#play mr wizard in the morning, except saturday and sunday
+	#	folder = "cartoons/mr wizard"
+	#	folder2 = ""
 
 	if PastThanksgiving(False):
 		#christmas programming
@@ -494,7 +519,7 @@ while(1):
 		if folder2 != "":
 			video = video + get_videos_from_dir(drive + folder2)
 
-
+		check_video()
 		if next_video_to_play != '':
 			play_video(next_video_to_play, [], 0)
 			next_video_to_play=''
