@@ -168,7 +168,7 @@ def play_video(source, commercials, max_commercials_per_break):
 		comm_player = OMXPlayer(comm_source, args=['--no-osd', '--blank'], dbus_name="omxplayer.player1")
 		err_pos = 0.12
 		comm_player.set_video_pos(40,10,660,470);
-		comm_player.set_aspect_mode('stretch');
+		comm_player.set_aspect_mode('fill');
 		err_pos = 0.13
 		comm_player.hide_video()
 		err_pos = 0.14
@@ -186,7 +186,7 @@ def play_video(source, commercials, max_commercials_per_break):
 		print('Boosting Volume by ' + str(get_volume(source)) + 'db')
 		err_pos = 0.31
 		player.set_video_pos(40,10,660,470);
-		player.set_aspect_mode('stretch');
+		player.set_aspect_mode('fill');
 		err_pos = 0.32
 		#player.set_volume(get_volume(source))
 		err_pos = 0.33
@@ -265,21 +265,21 @@ def play_video(source, commercials, max_commercials_per_break):
 
 		err_pos = 7.0
 		player.hide_video()
-		player.quit()
 		sleep(0.5)
 	except Exception as e:
-		contents = urllib2.urlopen("http://127.0.0.1/?error=MAIN_" + str(err_pos) + "_" + urllib.quote_plus(str(e))).read()
+		if(err_pos!=7.0):
+			contents = urllib2.urlopen("http://127.0.0.1/?error=MAIN_" + str(err_pos) + "_" + urllib.quote_plus(str(e))).read()
 		print("error main " + str(e))
 
 	try:
 		comm_player.quit()
 	except Exception as ex:
-		contents = urllib2.urlopen("http://127.0.0.1/?error=COMMERCIAL_" + str(err_pos) + "_" + urllib.quote_plus(str(ex))).read()
+		#contents = urllib2.urlopen("http://127.0.0.1/?error=COMMERCIAL_" + str(err_pos) + "_" + urllib.quote_plus(str(ex))).read()
 		print("error comm quit " + str(ex))
 	try:
 		player.quit()
 	except Exception as exx:
-		contents = urllib2.urlopen("http://127.0.0.1/?error=PLAYER_" + str(err_pos) + "_" + urllib.quote_plus(str(exx))).read()
+		#contents = urllib2.urlopen("http://127.0.0.1/?error=PLAYER_" + str(err_pos) + "_" + urllib.quote_plus(str(exx))).read()
 		print("error player quit " + str(exx))
 	
 	return
@@ -328,7 +328,7 @@ def play_some_commercials(max_commercials_per_break):
 		comm_source = get_random_commercial()
 		comm_player = OMXPlayer(comm_source, args=['--no-osd', '--blank'], dbus_name="omxplayer.player1")
 		comm_player.set_video_pos(40,10,660,470);
-		comm_player.set_aspect_mode('stretch');
+		comm_player.set_aspect_mode('fill');
 		comm_player.hide_video()
 		comm_player.pause()
 		#comm_player.set_volume(-1)
@@ -379,13 +379,13 @@ while(1):
 	month = now.month
 	h = now.hour
 	m = now.minute
-	
+	d = now.weekday()
+	ddm = now.day
+
 	folder = ""
 	folder2 = ""
 	dayfolder = ""
 
-	d = now.weekday()
-	ddm = now.day
 	
 	print("Date: Month: " + str(month) + " Hour: " + str(h) + " Minute: " + str(m) + " Weekday: " + str(d) + " Day: " + str(ddm))
 	
@@ -393,8 +393,8 @@ while(1):
 		dayfolder += "/monday/"
 	elif d==1: #tuesday
 		dayfolder += "/tuesday/"
-	elif d==2: #wedsnesday
-		dayfolder += "/wedsnesday/"
+	elif d==2: #wednesday
+		dayfolder += "/wednesday/"
 	elif d==3: #thursday
 		dayfolder += "/thursday/"
 	elif d==4: #friday
@@ -423,8 +423,8 @@ while(1):
 		folder = "reruns"
 	elif h>= 20 and h<23:
 		folder = "primetime" + dayfolder
-		if random.randint(1,20) == 1:
-			#1 in 14 chance to play a random video or primetime special
+		if random.randint(1,60) == 1:
+			#1 in 60 chance to play a random video or primetime special
 			folder = "primetime/random"
 	elif h==23 and (d>=0 and d<=4):
 		#latenight monday through friday
@@ -443,7 +443,6 @@ while(1):
 
 	if d==5 and h>=19 and h<=21 and random.randint(1,9)==5:
 		#saturday night, take a chance for a movie of the week!
-		
 		folder2 = "movies"
 	if d==5 and h>=14 and h<=15 and month>=4 and month <=9:
 		#saturday afternoon, in spring/summer, play a baseball game
@@ -456,6 +455,10 @@ while(1):
 
 
 	#holiday specials
+	if month==2 and ddm==14 and h>= 20 and h<22:
+		#valentines day
+		folder = "specials/valentines"
+		folder2 = ""
 	if month==7 and ddm==4 and h>= 20 and h<22:
 		#4th of July
 		folder = "specials/4th of july"
@@ -472,11 +475,11 @@ while(1):
 
 	#fill space close to the hour
 	
-	#if (m>=24 and m<=29) or (m>=54 and m<=59):
+	if (m>=26 and m<=29) or (m>=56 and m<=59):
 		#close to half/top hour
 		#folder = "specials/shorts"
-	#	folder = ""
-	#	folder2 = ""
+		folder = "commercials/local"
+		folder2 = ""
 	#if (m>=16 and m<=23) or (m>=46 and m<=53):
 		#not quite close to half/top hour
 	#	folder = "specials/long_shorts"

@@ -27,6 +27,15 @@ if(isset($_POST["volume"])) {
 	header("location: /\n\n");
 }
 
+if(isset($_GET["youtubedl"])) {
+	$output="";
+	$return_var="";
+	exec("youtube-dl -o \"/media/pi/750gb/" . addslashes($_GET["dir"]) . "/%(title)s.%(ext)s\" ".$_GET["youtubedl"]." 2>&1", $output, $return_var);
+	var_dump($output);
+	var_dump($return_var);
+	die("\n\n");
+}
+
 if(isset($_GET["reboot"])) {
     header("Location: /\n\n");
 	exec('sudo reboot');
@@ -249,6 +258,11 @@ if(isset($_GET["getshowname"])) {
 
 //if day = sunday and time > 5am and time < 10am
 
+	if(strpos($_GET["getshowname"], '/commercials/') > 0) {
+		//a commercial is being payed, ignore 
+		die("commercial|0");//."|".$brow["value_occurrence"]);
+	}
+
 	$dayofweek = date("l",time());
 	$hourofday = date("G",time());
 
@@ -258,7 +272,7 @@ if(isset($_GET["getshowname"])) {
 	$row=0;
 	$brow=0;
 
-	if($showType=="Specials" || $showType=="Movies" || $showType=="Primetime") {
+	if($showType=="Specials" || $showType=="Movies" || $showType=="Primetime" || $showType=="Gameshows") {
 		$row=0;
 	} else { //not sunday morning
 		$time_diff = 7200;
@@ -285,6 +299,9 @@ if(isset($_GET["getshowname"])) {
 $mntcont = strlen($drive_loc);
 
 if(isset($_GET["current_video"])) {
+	if(strpos($_GET["current_video"], '/commercials/') > 0) {
+		die(1);
+	}
 	$mysqli->real_query("INSERT INTO played (short_name, name, played) VALUES ('" . addslashes(getTvShowName($_GET["current_video"])) . "', '" . addslashes(substr($_GET["current_video"], $mntcont)) . "', ". time() . ")");
 	
 	die(1);
